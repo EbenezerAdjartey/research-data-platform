@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.turbo/
+.env
+.env.local
+*.pyc
+__pycache__/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+uploads/
+*.parquet
+.DS_Store
+Thumbs.db
+.claude/

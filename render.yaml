@@ -1,0 +1,101 @@
+services:
+  # FastAPI Backend
+  - type: web
+    name: rdp-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rdp-postgres
+          property: connectionString
+        # Render provides postgres:// — we need postgresql+asyncpg://
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: '["https://rdp-web.onrender.com"]'
+      - key: REDIS_URL
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+    healthCheckPath: /api/v1/health
+    plan: starter
+
+  # React Frontend (static site)
+  - type: web
+    name: rdp-web
+    runtime: static
+    buildCommand: corepack enable && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile && pnpm --filter @rdp/shared-types --filter @rdp/api-client build && pnpm --filter @rdp/web build
+    staticPublishPath: ./apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://rdp-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://rdp-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    plan: starter
+
+  # Celery Worker
+  - type: worker
+    name: rdp-celery
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    dockerCommand: celery -A app.services.celery_app worker --loglevel=info --concurrency=2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rdp-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          name: rdp-api
+          type: web
+          envVarKey: SECRET_KEY
+      - key: REDIS_URL
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: rdp-redis
+          type: redis
+          property: connectionString
+    plan: starter
+
+  # Redis
+  - type: redis
+    name: rdp-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+databases:
+  - name: rdp-postgres
+    plan: starter
+    databaseName: research_data_platform
+    user: rdp_user

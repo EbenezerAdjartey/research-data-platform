@@ -1,0 +1,36 @@
+{
+  "name": "@rdp/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "prebuild": "cp -r ../web/dist ./web-dist || xcopy /E /I /Y ..\\web\\dist .\\web-dist",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.rdp.desktop",
+    "productName": "Research Data Platform",
+    "files": ["src/**/*", "web-dist/**/*"],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

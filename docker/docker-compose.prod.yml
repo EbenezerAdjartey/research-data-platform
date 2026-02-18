@@ -1,0 +1,109 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: rdp-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rdp_user:${POSTGRES_PASSWORD}@postgres:5432/research_data_platform
+      DATABASE_URL_SYNC: postgresql://rdp_user:${POSTGRES_PASSWORD}@postgres:5432/research_data_platform
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/2
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: "false"
+      CORS_ORIGINS: '["https://${DOMAIN:-localhost}"]'
+    volumes:
+      - api_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rdp-network
+
+  celery-worker:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: rdp-celery-worker
+    restart: unless-stopped
+    command: celery -A app.services.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rdp_user:${POSTGRES_PASSWORD}@postgres:5432/research_data_platform
+      DATABASE_URL_SYNC: postgresql://rdp_user:${POSTGRES_PASSWORD}@postgres:5432/research_data_platform
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/2
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: "false"
+    volumes:
+      - api_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rdp-network
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    container_name: rdp-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - rdp-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: rdp-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rdp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: research_data_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rdp_user -d research_data_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rdp-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rdp-redis-prod
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rdp-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads:
+
+networks:
+  rdp-network:
+    driver: bridge
