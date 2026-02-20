@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +35,8 @@ async def _run_analysis_background(analysis_id: int, analysis_type: str, paramet
         analysis = result_row.scalar_one()
 
         try:
-            results = run_analysis(
+            results = await asyncio.to_thread(
+                run_analysis,
                 analysis_type=analysis_type,
                 parameters=parameters,
                 data_path=data_path,
@@ -95,9 +97,10 @@ async def run_analysis_endpoint(
         )
         return analysis
 
-    # Synchronous mode (default) - run inline
+    # Synchronous mode (default) - run in thread pool to avoid blocking event loop
     try:
-        results = run_analysis(
+        results = await asyncio.to_thread(
+            run_analysis,
             analysis_type=data.analysis_type,
             parameters=data.parameters,
             data_path=dataset.storage_path,

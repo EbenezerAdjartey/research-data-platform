@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { BarChart3, FolderOpen, LogOut, User, FileText, Database } from 'lucide-react';
+import { BarChart3, FolderOpen, LogOut, User, CreditCard } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const navItems = [
   { path: '/projects', label: 'Projects', icon: FolderOpen },
+  { path: '/billing', label: 'Billing', icon: CreditCard },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

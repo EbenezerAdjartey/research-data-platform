@@ -28,8 +28,11 @@ async def create_report(
 
     if data.export_format:
         from app.services.report_export import export_report
-        file_path = export_report(report, data.export_format)
-        report.file_path = str(file_path)
+        try:
+            file_path = export_report(report, data.export_format)
+            report.file_path = str(file_path)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Export failed: {e}")
 
     await db.commit()
     await db.refresh(report)

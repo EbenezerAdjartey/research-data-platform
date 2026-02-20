@@ -32,6 +32,14 @@ services:
           name: rdp-redis
           type: redis
           property: connectionString
+      - key: FRONTEND_URL
+        value: https://rdp-web.onrender.com
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
     healthCheckPath: /api/v1/health
     plan: starter
 
@@ -44,6 +52,8 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://rdp-api.onrender.com
+      - key: VITE_REQUIRE_SUBSCRIPTION
+        value: "true"
     routes:
       - type: rewrite
         source: /api/*

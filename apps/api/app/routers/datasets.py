@@ -157,6 +157,9 @@ async def delete_dataset(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    storage = Path(dataset.storage_path)
-    storage.unlink(missing_ok=True)
+    parquet_path = Path(dataset.storage_path)
+    parquet_path.unlink(missing_ok=True)
+    # Also remove the original uploaded file stored alongside the parquet
+    original_path = parquet_path.with_suffix(f".{dataset.format}")
+    original_path.unlink(missing_ok=True)
     await db.delete(dataset)

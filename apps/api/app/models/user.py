@@ -12,6 +12,12 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(255))
     institution: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Stripe subscription
+    subscription_status: Mapped[str] = mapped_column(String(20), default="inactive", server_default="inactive")
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

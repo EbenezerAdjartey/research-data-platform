@@ -22,6 +22,7 @@ export interface User {
   email: string;
   full_name: string;
   institution: string | null;
+  subscription_status: string;
 }
 
 // Project types

@@ -148,6 +148,13 @@ export const visualizations = {
   get: (id: number) => request<Visualization>(`/analysis/visualizations/${id}`),
 };
 
+// Billing
+export const billing = {
+  status: () => request<{ subscription_status: string; stripe_enabled: boolean }>('/billing/status'),
+  checkout: () => request<{ url: string }>('/billing/checkout', { method: 'POST' }),
+  portal: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
+};
+
 // Reports
 export const reports = {
   create: (data: ReportCreate) =>

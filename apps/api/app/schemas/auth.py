@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     institution: str | None
+    subscription_status: str = "inactive"
 
     model_config = {"from_attributes": True}
 

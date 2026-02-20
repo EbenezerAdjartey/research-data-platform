@@ -146,7 +146,7 @@ const PARAM_CONFIGS: Record<string, { key: string; label: string; type: 'column'
     { key: 'independent', label: 'Independent Variables', type: 'columns' },
   ],
   clustering_ml: [
-    { key: 'columns', label: 'Feature Columns', type: 'columns' },
+    { key: 'features', label: 'Feature Columns', type: 'columns' },
     { key: 'n_clusters', label: 'Number of Clusters', type: 'number' },
     { key: 'algorithm', label: 'Algorithm', type: 'select', options: ['kmeans', 'dbscan', 'hierarchical'] },
   ],

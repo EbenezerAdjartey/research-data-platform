@@ -85,11 +85,15 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     await db.delete(stored)
 
     user_id = payload["sub"]
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Invalid token")
     access_token = create_access_token(user_id)
     new_refresh = create_refresh_token(user_id)
 
     rt = RefreshToken(
-        user_id=int(user_id),
+        user_id=user_id_int,
         token_hash=hashlib.sha256(new_refresh.encode()).hexdigest(),
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )

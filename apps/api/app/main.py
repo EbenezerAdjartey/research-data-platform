@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.security import require_subscription
 from app.core.security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from app.routers import auth, projects, datasets, analysis, reports, ws
+from app.routers import auth, projects, datasets, analysis, reports, ws, billing
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -22,12 +23,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Public routes — no subscription check
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
-app.include_router(projects.router, prefix=settings.API_V1_PREFIX)
-app.include_router(datasets.router, prefix=settings.API_V1_PREFIX)
-app.include_router(analysis.router, prefix=settings.API_V1_PREFIX)
-app.include_router(reports.router, prefix=settings.API_V1_PREFIX)
+app.include_router(billing.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
+
+# Subscription-gated routes
+_sub = [Depends(require_subscription)]
+app.include_router(projects.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
+app.include_router(datasets.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
+app.include_router(analysis.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
+app.include_router(reports.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 
 
 @app.get("/api/health")

@@ -63,8 +63,29 @@ async def get_current_user(
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    result = await db.execute(select(User).where(User.id == int(user_id)))
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    result = await db.execute(select(User).where(User.id == user_id_int))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+
+async def require_subscription(user=Depends(get_current_user)):
+    """Dependency that enforces an active Stripe subscription.
+
+    When STRIPE_SECRET_KEY is not set (local dev), the check is skipped so
+    development works without a Stripe account.
+    """
+    if not settings.STRIPE_SECRET_KEY:
+        return user
+    if getattr(user, "subscription_status", "inactive") != "active":
+        raise HTTPException(
+            status_code=403,
+            detail="Active subscription required. Please subscribe to access this feature.",
+        )
     return user
