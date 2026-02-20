@@ -1,7 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.dataset import Dataset
+    from app.models.project import Project
+    from app.models.visualization import Visualization
 
 
 class AnalysisResult(Base):

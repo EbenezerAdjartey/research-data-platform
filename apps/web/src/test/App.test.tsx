@@ -33,12 +33,12 @@ describe('App', () => {
   it('redirects unauthenticated users to login', () => {
     renderApp('/projects');
     // Should redirect to login since user is null
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('renders login page at /login', () => {
     renderApp('/login');
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('renders register page at /register', () => {
