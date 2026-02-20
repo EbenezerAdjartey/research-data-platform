@@ -62,7 +62,6 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-    plan: starter
 
   # Celery Worker
   - type: worker
@@ -107,6 +106,6 @@ services:
 
 databases:
   - name: rdp-postgres
-    plan: starter
+    plan: free
     databaseName: research_data_platform
     user: rdp_user
