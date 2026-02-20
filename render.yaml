@@ -25,7 +25,6 @@ services:
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
-    preDeployCommand: PYTHONPATH=/app alembic upgrade head
     healthCheckPath: /api/v1/health
 
   # React Frontend (static site)
