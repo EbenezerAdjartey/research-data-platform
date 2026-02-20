@@ -24,9 +24,6 @@ class Settings(BaseSettings):
             self.DATABASE_URL_SYNC = self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
         return self
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
-
     # JWT
     SECRET_KEY: str = "dev-secret-change-in-production"
     ALGORITHM: str = "HS256"
@@ -42,10 +39,6 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:3000",
     ]
-
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
 
     # Stripe (leave empty to disable subscription gating in development)
     STRIPE_SECRET_KEY: str = ""

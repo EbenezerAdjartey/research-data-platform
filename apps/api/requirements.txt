@@ -37,9 +37,6 @@ pymc>=5.10.0
 bambi>=0.13.0
 arviz>=0.18.0
 
-# Async tasks
-celery[redis]==5.4.0
-redis==5.1.0
 
 # Visualization & reports
 plotly==5.24.0
