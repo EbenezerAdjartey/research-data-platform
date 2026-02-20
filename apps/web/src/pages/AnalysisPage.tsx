@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { analysis } from '@rdp/api-client';
 import type { AnalysisType } from '@rdp/shared-types';
-import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, XCircle, AlertTriangle } from 'lucide-react';
 import AnalysisVisualizations from '@/components/AnalysisVisualizations';
 
 export default function AnalysisPage() {

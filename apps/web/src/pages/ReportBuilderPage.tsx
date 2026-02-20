@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { reports, analysis, projects } from '@rdp/api-client';
 import toast from 'react-hot-toast';
 import type { AnalysisResult } from '@rdp/shared-types';
@@ -202,8 +202,8 @@ export default function ReportBuilderPage() {
       const url = reports.downloadUrl(report.id);
       window.open(url, '_blank');
       toast.success(`Report exported as ${format.toUpperCase()}`);
-    } catch (err: any) {
-      toast.error(err?.message || 'Export failed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(false);
     }
@@ -222,8 +222,8 @@ export default function ReportBuilderPage() {
       });
       refetchReports();
       toast.success('Report saved');
-    } catch (err: any) {
-      toast.error(err?.message || 'Save failed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed');
     }
   };
 

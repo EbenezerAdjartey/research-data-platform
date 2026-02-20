@@ -36,10 +36,9 @@ export default function AnalysisVisualizations({ analysisType, results }: Props)
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface ChartSpec {
-  data: any[];
-  layout: Record<string, any>;
+  data: Record<string, unknown>[];
+  layout: Record<string, unknown>;
 }
 
 function generateCharts(type: AnalysisType, results: Record<string, unknown>): ChartSpec[] {
