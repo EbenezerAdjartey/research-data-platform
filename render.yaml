@@ -40,6 +40,7 @@ services:
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
+    preDeployCommand: PYTHONPATH=/app alembic upgrade head
     healthCheckPath: /api/v1/health
     plan: starter
 
@@ -51,7 +52,7 @@ services:
     staticPublishPath: ./apps/web/dist
     envVars:
       - key: VITE_API_URL
-        value: https://rdp-api.onrender.com
+        value: https://rdp-api.onrender.com/api/v1
       - key: VITE_REQUIRE_SUBSCRIPTION
         value: "true"
     routes:
