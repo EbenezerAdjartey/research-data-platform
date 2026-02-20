@@ -11,7 +11,7 @@ All tests use an in-memory SQLite database via the fixtures defined in
 conftest.py so no external services are required.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import uuid
 import pytest
 
@@ -113,7 +113,6 @@ class TestAuthLogin:
             "full_name": "Login User",
         })
 
-        from app.core.security import create_refresh_token as _orig_crt
         import uuid as _uuid
 
         def _unique_refresh(subject: str) -> str:
@@ -563,7 +562,6 @@ class TestAnalysisEndpoints:
         """Helper: create a project and insert a dataset row directly so that
         the analysis endpoint can find them."""
         from app.models.dataset import Dataset
-        from app.models.project import Project
 
         # Create project via API
         proj_resp = await client.post(

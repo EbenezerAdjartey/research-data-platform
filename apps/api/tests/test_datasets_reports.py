@@ -1,9 +1,8 @@
 """Tests for datasets, reports, and visualization endpoints."""
 import io
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from tests.conftest import auth_header
 

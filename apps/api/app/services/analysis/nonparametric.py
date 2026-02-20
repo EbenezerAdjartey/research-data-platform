@@ -1,4 +1,3 @@
-import numpy as np
 from scipy import stats
 from app.services.analysis.engine import AnalysisEngine, register_engine
 

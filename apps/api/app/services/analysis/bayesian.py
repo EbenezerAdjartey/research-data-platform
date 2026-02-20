@@ -27,7 +27,7 @@ class BayesianRegression(AnalysisEngine):
 
         data = self.df[indep + [dep]].dropna()
 
-        with pm.Model() as model:
+        with pm.Model():
             # Priors
             intercept = pm.Normal("intercept", mu=0, sigma=10)
             betas = {}

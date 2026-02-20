@@ -1,6 +1,4 @@
 """WebSocket endpoint for real-time analysis progress updates."""
-import asyncio
-import json
 from collections import defaultdict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 

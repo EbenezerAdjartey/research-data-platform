@@ -42,7 +42,7 @@ def run_analysis(analysis_type: str, parameters: dict, data_path: str) -> dict:
 
 
 # Import all modules to trigger registration
-from app.services.analysis import (
+from app.services.analysis import (  # noqa: F401, E402
     descriptive,
     inferential,
     regression,

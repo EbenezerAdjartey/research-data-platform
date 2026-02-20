@@ -43,6 +43,6 @@ describe('App', () => {
 
   it('renders register page at /register', () => {
     renderApp('/register');
-    expect(screen.getByText(/create.*account|sign up|register/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /create.*account|sign up|register/i })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,4 @@
 import plotly.graph_objects as go
-import plotly.express as px
 import numpy as np
 
 
@@ -131,7 +130,7 @@ def _build_forest(results: dict, config: dict) -> go.Figure:
     fig.add_trace(go.Scatter(
         x=effects, y=names, mode="markers",
         error_x=dict(type="data", symmetric=False, array=[h - e for e, h in zip(effects, ci_high)],
-                     arrayminus=[e - l for e, l in zip(effects, ci_low)]),
+                     arrayminus=[e - lo for e, lo in zip(effects, ci_low)]),
         marker=dict(size=8),
     ))
     fig.add_vline(x=0, line_dash="dash", line_color="gray")

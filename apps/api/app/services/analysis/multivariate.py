@@ -20,7 +20,7 @@ class PCAAnalysis(AnalysisEngine):
         scaled = scaler.fit_transform(data)
 
         pca = PCA(n_components=n_components)
-        scores = pca.fit_transform(scaled)
+        pca.fit_transform(scaled)
 
         loadings = {}
         for i, comp in enumerate(pca.components_):
