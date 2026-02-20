@@ -163,17 +163,24 @@ jobs:
     needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Deploy API & run migrations
+      - name: Trigger Render deploys
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_API }}" \
-            -o /dev/null -w "rdp-api deploy triggered (HTTP %{http_code})\n"
-
-      - name: Deploy Celery worker
-        run: |
-          curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_CELERY }}" \
-            -o /dev/null -w "rdp-celery deploy triggered (HTTP %{http_code})\n"
-
-      - name: Deploy frontend
-        run: |
-          curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_WEB }}" \
-            -o /dev/null -w "rdp-web deploy triggered (HTTP %{http_code})\n"
+          for svc in rdp-api rdp-celery rdp-web; do
+            echo "Looking up service: $svc"
+            svc_id=$(curl -sf "https://api.render.com/v1/services?name=${svc}&limit=1" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              | jq -r '.[0].service.id // empty')
+            if [ -z "$svc_id" ]; then
+              echo "WARNING: could not find service '$svc' — skipping"
+              continue
+            fi
+            echo "Deploying $svc ($svc_id)..."
+            deploy_id=$(curl -sf -X POST "https://api.render.com/v1/services/${svc_id}/deploys" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"clearCache":false}' \
+              | jq -r '.id // empty')
+            echo "$svc deploy triggered — deploy ID: $deploy_id"
+          done
