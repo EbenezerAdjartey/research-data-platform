@@ -14,13 +14,20 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def fix_database_urls(self):
-        """Normalize DB URLs for providers like Render that use postgres:// prefix."""
+        """Normalize DB URLs for any provider (Render uses postgres:// or postgresql://)."""
+        # Ensure async URL always uses asyncpg driver
         if self.DATABASE_URL.startswith("postgres://"):
             self.DATABASE_URL = self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif self.DATABASE_URL.startswith("postgresql://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Ensure sync URL uses plain postgresql:// (for alembic / psycopg2)
         if self.DATABASE_URL_SYNC.startswith("postgres://"):
             self.DATABASE_URL_SYNC = self.DATABASE_URL_SYNC.replace("postgres://", "postgresql://", 1)
-        # If only DATABASE_URL is set, derive the sync version
-        if "asyncpg" in self.DATABASE_URL and self.DATABASE_URL_SYNC == "postgresql://rdp_user:rdp_password@localhost:5432/research_data_platform":
+        elif self.DATABASE_URL_SYNC.startswith("postgresql+asyncpg://"):
+            self.DATABASE_URL_SYNC = self.DATABASE_URL_SYNC.replace("postgresql+asyncpg://", "postgresql://", 1)
+        # If DATABASE_URL_SYNC is still the localhost default, derive it from DATABASE_URL
+        _default_sync = "postgresql://rdp_user:rdp_password@localhost:5432/research_data_platform"
+        if self.DATABASE_URL_SYNC == _default_sync and "asyncpg" in self.DATABASE_URL:
             self.DATABASE_URL_SYNC = self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
         return self
 
