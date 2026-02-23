@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ID: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
     # Set to false to bypass subscription enforcement (keeps billing code intact)
-    REQUIRE_SUBSCRIPTION: bool = True
+    REQUIRE_SUBSCRIPTION: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
