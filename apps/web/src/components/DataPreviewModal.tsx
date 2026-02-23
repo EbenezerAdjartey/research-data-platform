@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { datasets } from '@rdp/api-client';
-import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Search } from 'lucide-react';
 
 interface Props {
   projectId: number;
@@ -19,9 +20,18 @@ export default function DataPreviewModal({ projectId, datasetId, onClose }: Prop
       <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Data Preview ({data?.total_rows} total rows)</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/projects/${projectId}/explore/${datasetId}`}
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50"
+            >
+              <Search className="w-3.5 h-3.5" /> Open in Explorer
+            </Link>
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto">

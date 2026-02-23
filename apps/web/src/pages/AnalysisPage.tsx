@@ -1,8 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { analysis } from '@rdp/api-client';
+import { analysis, datasets } from '@rdp/api-client';
 import type { AnalysisType } from '@rdp/shared-types';
-import { ArrowLeft, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, XCircle, AlertTriangle, Database, FileText, RotateCcw } from 'lucide-react';
 import AnalysisVisualizations from '@/components/AnalysisVisualizations';
 
 export default function AnalysisPage() {
@@ -13,6 +13,14 @@ export default function AnalysisPage() {
     queryKey: ['analysis', Number(analysisId)],
     queryFn: () => analysis.get(Number(analysisId)),
   });
+
+  const { data: datasetList } = useQuery({
+    queryKey: ['datasets', projectId],
+    queryFn: () => datasets.list(projectId),
+    enabled: !!result,
+  });
+
+  const sourceDataset = datasetList?.find((d) => d.id === result?.dataset_id);
 
   const fmt = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -28,15 +36,41 @@ export default function AnalysisPage() {
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border mb-6">
         <div className="p-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">{fmt(result.analysis_type)}</h1>
-            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-              result.status === 'completed' ? 'bg-green-100 text-green-700'
-                : result.status === 'failed' ? 'bg-red-100 text-red-700'
-                : 'bg-yellow-100 text-yellow-700'
-            }`}>{result.status}</span>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold">{fmt(result.analysis_type)}</h1>
+              <p className="text-sm text-gray-500 mt-1">Run at {new Date(result.created_at).toLocaleString()}</p>
+              {sourceDataset && (
+                <Link
+                  to={`/projects/${projectId}/explore/${sourceDataset.id}`}
+                  className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 mt-1"
+                >
+                  <Database className="w-3 h-3" /> {sourceDataset.filename}
+                </Link>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                result.status === 'completed' ? 'bg-green-100 text-green-700'
+                  : result.status === 'failed' ? 'bg-red-100 text-red-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>{result.status}</span>
+              <Link
+                to={`/projects/${projectId}`}
+                state={{ selectDatasetId: result.dataset_id }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
+                title="Re-run this analysis"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Re-run
+              </Link>
+              <Link
+                to={`/projects/${projectId}/reports`}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                <FileText className="w-3.5 h-3.5" /> Add to Report
+              </Link>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-1">Run at {new Date(result.created_at).toLocaleString()}</p>
         </div>
 
         {result.error_message && (

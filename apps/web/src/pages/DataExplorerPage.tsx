@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { projects, datasets } from '@rdp/api-client';
 import {
   ArrowUpDown, ArrowUp, ArrowDown, Search, Filter, Table,
-  ChevronLeft, ChevronRight, Database, Columns,
+  ChevronLeft, ChevronRight, Database, Columns, Play,
 } from 'lucide-react';
 
 type SortDir = 'asc' | 'desc' | null;
@@ -113,10 +113,21 @@ export default function DataExplorerPage() {
         <Link to={`/projects/${projectId}`} className="text-primary-600 hover:text-primary-800 text-sm">
           &larr; Back to Project
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Data Explorer</h1>
-        <p className="text-gray-500 text-sm">
-          {project?.name} &middot; {datasetInfo?.filename ?? `Dataset #${dsId}`}
-        </p>
+        <div className="flex items-start justify-between mt-2">
+          <div>
+            <h1 className="text-2xl font-bold">Data Explorer</h1>
+            <p className="text-gray-500 text-sm">
+              {project?.name} &middot; {datasetInfo?.filename ?? `Dataset #${dsId}`}
+            </p>
+          </div>
+          <Link
+            to={`/projects/${projectId}`}
+            state={{ selectDatasetId: dsId }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+          >
+            <Play className="w-4 h-4" /> Run Analysis
+          </Link>
+        </div>
       </div>
 
       {/* Stats bar */}

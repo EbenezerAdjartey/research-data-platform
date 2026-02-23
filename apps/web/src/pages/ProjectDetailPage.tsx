@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projects, datasets, analysis } from '@rdp/api-client';
 import { useDropzone } from 'react-dropzone';
@@ -15,9 +15,12 @@ export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [previewDatasetId, setPreviewDatasetId] = useState<number | null>(null);
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisType | null>(null);
-  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
+    (location.state as { selectDatasetId?: number } | null)?.selectDatasetId ?? null,
+  );
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // WebSocket for real-time analysis updates
@@ -38,12 +41,12 @@ export default function ProjectDetailPage() {
     queryFn: () => analysis.listByProject(projectId),
   });
 
-  // Auto-select first dataset when list loads or changes
+  // Auto-select first dataset when list loads (only if nothing pre-selected)
   useEffect(() => {
-    if (datasetList?.length && !selectedDatasetId) {
+    if (datasetList?.length && selectedDatasetId === null) {
       setSelectedDatasetId(datasetList[0].id);
     }
-  }, [datasetList, selectedDatasetId]);
+  }, [datasetList]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => datasets.upload(projectId, file),
@@ -244,31 +247,35 @@ export default function ProjectDetailPage() {
               <p className="p-4 text-sm text-gray-500">No analyses run yet.</p>
             ) : (
               <div className="divide-y">
-                {analysisList.map((a) => (
-                  <Link
-                    key={a.id}
-                    to={`/projects/${projectId}/analysis/${a.id}`}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50 block"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{formatLabel(a.analysis_type)}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(a.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        a.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : a.status === 'failed'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
+                {analysisList.map((a) => {
+                  const ds = datasetList?.find((d) => d.id === a.dataset_id);
+                  return (
+                    <Link
+                      key={a.id}
+                      to={`/projects/${projectId}/analysis/${a.id}`}
+                      className="p-4 flex items-center justify-between hover:bg-gray-50 block"
                     >
-                      {a.status}
-                    </span>
-                  </Link>
-                ))}
+                      <div>
+                        <p className="text-sm font-medium">{formatLabel(a.analysis_type)}</p>
+                        <p className="text-xs text-gray-400">
+                          {ds && <span className="text-gray-500">{ds.filename} &middot; </span>}
+                          {new Date(a.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          a.status === 'completed'
+                            ? 'bg-green-100 text-green-700'
+                            : a.status === 'failed'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {a.status}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
