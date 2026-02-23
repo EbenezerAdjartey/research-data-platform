@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projects } from '@rdp/api-client';
 import toast from 'react-hot-toast';
-import { Plus, FolderOpen, Calendar } from 'lucide-react';
+import { Plus, FolderOpen, Calendar, Trash2, Pencil, Check, X } from 'lucide-react';
 
 export default function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
   const queryClient = useQueryClient();
 
   const { data: projectList, isLoading } = useQuery({
@@ -27,6 +29,44 @@ export default function ProjectsPage() {
     },
     onError: () => toast.error('Failed to create project'),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => projects.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project deleted');
+    },
+    onError: () => toast.error('Failed to delete project'),
+  });
+
+  const renameMutation = useMutation({
+    mutationFn: ({ id, name: n }: { id: number; name: string }) =>
+      projects.update(id, { name: n }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setEditingId(null);
+      toast.success('Project renamed');
+    },
+    onError: () => toast.error('Failed to rename project'),
+  });
+
+  const startEdit = (id: number, currentName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setEditingId(id);
+    setEditName(currentName);
+  };
+
+  const confirmRename = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (editName.trim()) renameMutation.mutate({ id, name: editName.trim() });
+  };
+
+  const handleDelete = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.confirm('Delete this project and all its data?')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   return (
     <div>
@@ -107,15 +147,58 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               to={`/projects/${project.id}`}
-              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow group relative"
             >
-              <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+              {/* Name row with inline edit */}
+              {editingId === project.id ? (
+                <div className="flex items-center gap-1 mb-2" onClick={(e) => e.preventDefault()}>
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') renameMutation.mutate({ id: project.id, name: editName.trim() });
+                      if (e.key === 'Escape') setEditingId(null);
+                    }}
+                    className="flex-1 text-sm font-semibold border rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary-400"
+                  />
+                  <button onClick={(e) => confirmRename(project.id, e)} className="p-1 text-green-600 hover:text-green-800">
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button onClick={(e) => { e.preventDefault(); setEditingId(null); }} className="p-1 text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+              )}
+
               {project.description && (
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
               )}
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Calendar className="w-3 h-3" />
-                {new Date(project.updated_at).toLocaleDateString()}
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(project.updated_at).toLocaleDateString()}
+                </div>
+                {/* Action buttons — visible on hover */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => startEdit(project.id, project.name, e)}
+                    className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50"
+                    title="Rename"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(project.id, e)}
+                    className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </Link>
           ))}

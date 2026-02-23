@@ -162,5 +162,22 @@ export const reports = {
   get: (id: number) => request<Report>(`/reports/${id}`),
   listByProject: (projectId: number) =>
     request<Report[]>(`/reports/project/${projectId}`),
+  /** Returns the raw authenticated download URL (for server-side use only). */
   downloadUrl: (id: number) => `${API_BASE}/reports/${id}/download`,
+  /** Fetches the file with auth and triggers a browser download. */
+  download: async (id: number, title: string, format: string): Promise<void> => {
+    const headers: Record<string, string> = {};
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    const response = await fetch(`${API_BASE}/reports/${id}/download`, { headers });
+    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };

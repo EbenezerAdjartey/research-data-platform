@@ -198,9 +198,8 @@ export default function ReportBuilderPage() {
         export_format: format,
       });
       refetchReports();
-      // trigger download
-      const url = reports.downloadUrl(report.id);
-      window.open(url, '_blank');
+      // Trigger authenticated download (window.open won't send auth header)
+      await reports.download(report.id, report.title, format);
       toast.success(`Report exported as ${format.toUpperCase()}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Export failed');
@@ -315,14 +314,13 @@ export default function ReportBuilderPage() {
                       <p className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</p>
                     </div>
                     {r.file_path && (
-                      <a
-                        href={reports.downloadUrl(r.id)}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={() => reports.download(r.id, r.title, r.export_format ?? 'pdf').catch(() => toast.error('Download failed'))}
                         className="text-primary-600 hover:text-primary-800"
+                        title="Download"
                       >
                         <Download className="w-4 h-4" />
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
