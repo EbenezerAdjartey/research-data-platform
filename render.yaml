@@ -1,10 +1,10 @@
 services:
-  # FastAPI Backend
+  # FastAPI Backend (pulls pre-built image from Docker Hub — avoids OOM on Render's free build infra)
   - type: web
     name: rdp-api
-    runtime: docker
-    dockerfilePath: ./apps/api/Dockerfile
-    dockerContext: ./apps/api
+    runtime: image
+    image:
+      url: docker.io/ebenezer401/rdp-api:latest
     plan: free
     envVars:
       - key: DATABASE_URL

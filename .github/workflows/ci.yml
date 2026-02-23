@@ -167,7 +167,7 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          for svc in rdp-api rdp-celery rdp-web; do
+          for svc in rdp-api rdp-web; do
             echo "Looking up service: $svc"
             svc_id=$(curl -sf "https://api.render.com/v1/services?name=${svc}&limit=1" \
               -H "Authorization: Bearer $RENDER_API_KEY" \
