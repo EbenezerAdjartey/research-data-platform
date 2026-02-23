@@ -166,6 +166,8 @@ jobs:
       - name: Trigger Render deploys
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          GIT_SHA: ${{ github.sha }}
         run: |
           for svc in rdp-api rdp-web; do
             echo "Looking up service: $svc"
@@ -176,11 +178,17 @@ jobs:
               echo "WARNING: could not find service '$svc' — skipping"
               continue
             fi
-            echo "Deploying $svc ($svc_id)..."
+            echo "Deploying $svc ($svc_id) with image sha $GIT_SHA ..."
+            # For rdp-api (image-based), pass the exact SHA tag so Render always pulls fresh
+            if [ "$svc" = "rdp-api" ]; then
+              PAYLOAD="{\"clearCache\":\"clear\",\"imageUrl\":\"docker.io/${DOCKER_USERNAME}/rdp-api:${GIT_SHA}\"}"
+            else
+              PAYLOAD="{\"clearCache\":\"clear\"}"
+            fi
             deploy_id=$(curl -sf -X POST "https://api.render.com/v1/services/${svc_id}/deploys" \
               -H "Authorization: Bearer $RENDER_API_KEY" \
               -H "Content-Type: application/json" \
-              -d '{"clearCache":false}' \
+              -d "$PAYLOAD" \
               | jq -r '.id // empty')
             echo "$svc deploy triggered — deploy ID: $deploy_id"
           done
