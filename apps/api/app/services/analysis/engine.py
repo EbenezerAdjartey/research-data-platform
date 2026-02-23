@@ -29,7 +29,34 @@ class AnalysisEngine(ABC):
         pass
 
 
+_engines_loaded = False
+
+
+def _load_engines() -> None:
+    """Lazily import all analysis submodules to trigger @register_engine decorators.
+    Called on first analysis request so heavy packages (scipy, sklearn, etc.)
+    are not loaded at server startup, keeping memory within the free tier limit.
+    """
+    global _engines_loaded
+    if _engines_loaded:
+        return
+    from app.services.analysis import (  # noqa: F401
+        descriptive,
+        inferential,
+        regression,
+        nonparametric,
+        multivariate,
+        timeseries,
+        bayesian,
+        survival,
+        meta_analysis,
+        machine_learning,
+    )
+    _engines_loaded = True
+
+
 def run_analysis(analysis_type: str, parameters: dict, data_path: str) -> dict:
+    _load_engines()
     engine_cls = _registry.get(analysis_type)
     if engine_cls is None:
         available = ", ".join(sorted(_registry.keys()))
@@ -39,18 +66,3 @@ def run_analysis(analysis_type: str, parameters: dict, data_path: str) -> dict:
     engine = engine_cls(df, parameters)
     engine.validate()
     return engine.execute()
-
-
-# Import all modules to trigger registration
-from app.services.analysis import (  # noqa: F401, E402
-    descriptive,
-    inferential,
-    regression,
-    nonparametric,
-    multivariate,
-    timeseries,
-    bayesian,
-    survival,
-    meta_analysis,
-    machine_learning,
-)
