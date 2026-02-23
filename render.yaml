@@ -25,6 +25,8 @@ services:
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
+      - key: REQUIRE_SUBSCRIPTION
+        value: "false"
     healthCheckPath: /api/v1/health
 
   # React Frontend (static site)
@@ -37,7 +39,7 @@ services:
       - key: VITE_API_URL
         value: https://rdp-api-6jxe.onrender.com/api/v1
       - key: VITE_REQUIRE_SUBSCRIPTION
-        value: "true"
+        value: "false"
     routes:
       - type: rewrite
         source: /api/*

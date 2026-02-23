@@ -47,11 +47,13 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
-    # Stripe (leave empty to disable subscription gating in development)
+    # Stripe
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_ID: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
+    # Set to false to bypass subscription enforcement (keeps billing code intact)
+    REQUIRE_SUBSCRIPTION: bool = True
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

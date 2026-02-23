@@ -78,10 +78,9 @@ async def get_current_user(
 async def require_subscription(user=Depends(get_current_user)):
     """Dependency that enforces an active Stripe subscription.
 
-    When STRIPE_SECRET_KEY is not set (local dev), the check is skipped so
-    development works without a Stripe account.
+    Bypassed when REQUIRE_SUBSCRIPTION=false or STRIPE_SECRET_KEY is unset.
     """
-    if not settings.STRIPE_SECRET_KEY:
+    if not settings.REQUIRE_SUBSCRIPTION or not settings.STRIPE_SECRET_KEY:
         return user
     if getattr(user, "subscription_status", "inactive") != "active":
         raise HTTPException(
