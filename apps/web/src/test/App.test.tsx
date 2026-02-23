@@ -3,14 +3,19 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock AuthContext
-vi.mock('@/context/AuthContext', () => ({
+// Mock useAuth (now in its own file)
+vi.mock('@/context/useAuth', () => ({
   useAuth: () => ({
     user: null,
     isLoading: false,
     login: vi.fn(),
     logout: vi.fn(),
   }),
+}));
+
+// Mock AuthContext module (AuthProvider wrapper + AuthContext object)
+vi.mock('@/context/AuthContext', () => ({
+  AuthContext: { Provider: ({ children }: { children: React.ReactNode }) => <>{children}</> },
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
