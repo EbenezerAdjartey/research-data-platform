@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { billing } from '@rdp/api-client';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/useAuth';
 import {
   CheckCircle, CreditCard, BarChart3, Database,
   FileText, Zap, ShieldCheck, Clock,

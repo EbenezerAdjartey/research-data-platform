@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import subprocess
 import sys
@@ -18,17 +19,22 @@ async def lifespan(_: FastAPI):
     # Run migrations on startup for real deployments (skip for SQLite used in tests)
     if "sqlite" not in settings.DATABASE_URL:
         app_root = Path(__file__).parent.parent  # directory containing alembic.ini
-        result = subprocess.run(
-            [sys.executable, "-m", "alembic", "upgrade", "head"],
-            cwd=app_root,
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            logger.error("Alembic migration failed (exit %d):\n%s\n%s",
-                         result.returncode, result.stdout, result.stderr)
+        for attempt in range(1, 6):
+            result = subprocess.run(
+                [sys.executable, "-m", "alembic", "upgrade", "head"],
+                cwd=app_root,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                logger.info("Alembic migrations applied successfully")
+                break
+            logger.warning("Alembic attempt %d/5 failed (exit %d): %s",
+                           attempt, result.returncode, result.stderr.strip())
+            if attempt < 5:
+                await asyncio.sleep(5)
         else:
-            logger.info("Alembic migrations applied successfully")
+            logger.error("All alembic attempts failed — DB schema may be out of date")
     yield
 
 

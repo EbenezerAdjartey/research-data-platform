@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/useAuth';
 import { BarChart3, FolderOpen, LogOut, User, CreditCard } from 'lucide-react';
 import type { ReactNode } from 'react';
 

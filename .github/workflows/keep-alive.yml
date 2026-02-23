@@ -1,0 +1,26 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # Ping every 10 minutes (Render free tier sleeps after 15 min inactivity)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  ping:
+    name: Ping Render services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health check
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            https://rdp-api-6jxe.onrender.com/api/v1/health)
+          echo "API responded: $STATUS"
+
+      - name: Ping Frontend
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            https://rdp-web-b074.onrender.com)
+          echo "Web responded: $STATUS"
