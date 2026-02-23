@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import sys
 from contextlib import asynccontextmanager
@@ -9,17 +10,25 @@ from app.core.security import require_subscription
 from app.core.security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from app.routers import auth, projects, datasets, analysis, reports, ws, billing
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Run migrations on startup for real deployments (skip for SQLite used in tests)
     if "sqlite" not in settings.DATABASE_URL:
         app_root = Path(__file__).parent.parent  # directory containing alembic.ini
-        subprocess.run(
+        result = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
-            check=True,
             cwd=app_root,
+            capture_output=True,
+            text=True,
         )
+        if result.returncode != 0:
+            logger.error("Alembic migration failed (exit %d):\n%s\n%s",
+                         result.returncode, result.stdout, result.stderr)
+        else:
+            logger.info("Alembic migrations applied successfully")
     yield
 
 
