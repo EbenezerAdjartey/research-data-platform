@@ -76,15 +76,18 @@ async def get_current_user(
 
 
 async def require_subscription(user=Depends(get_current_user)):
-    """Dependency that enforces an active Stripe subscription.
+    """Subscription enforcement is currently disabled.
 
-    Bypassed when REQUIRE_SUBSCRIPTION=false or STRIPE_SECRET_KEY is unset.
+    Re-enable by restoring the check below once Stripe is configured
+    and REQUIRE_SUBSCRIPTION=true is set in the environment.
     """
-    if not settings.REQUIRE_SUBSCRIPTION or not settings.STRIPE_SECRET_KEY:
-        return user
-    if getattr(user, "subscription_status", "inactive") != "active":
-        raise HTTPException(
-            status_code=403,
-            detail="Active subscription required. Please subscribe to access this feature.",
-        )
     return user
+    # --- enforcement code (disabled) ---
+    # if not settings.REQUIRE_SUBSCRIPTION or not settings.STRIPE_SECRET_KEY:
+    #     return user
+    # if getattr(user, "subscription_status", "inactive") != "active":
+    #     raise HTTPException(
+    #         status_code=403,
+    #         detail="Active subscription required. Please subscribe to access this feature.",
+    #     )
+    # return user
