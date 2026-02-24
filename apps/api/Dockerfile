@@ -7,18 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies required by weasyprint and other packages
-# WeasyPrint >= 60 dropped libgdk-pixbuf; uses libpango + libharfbuzz instead
+# Install system dependencies (libpq for psycopg2)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         libpq-dev \
-        libpango-1.0-0 \
-        libpangoft2-1.0-0 \
-        libpangocairo-1.0-0 \
-        libharfbuzz-subset0 \
-        libffi-dev \
-        libcairo2 \
         && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

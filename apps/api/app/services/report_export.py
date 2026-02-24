@@ -15,11 +15,51 @@ def export_report(report, export_format: str) -> Path:
 
 
 def _export_pdf(report, output_dir: Path) -> Path:
-    from weasyprint import HTML
+    from fpdf import FPDF
 
-    html_content = _build_html(report)
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+
+    # Title
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.cell(0, 12, report.title, ln=True, align="C")
+    pdf.ln(6)
+
+    sections = report.sections if isinstance(report.sections, dict) else {}
+    for section_key, content in sections.items():
+        # Section heading — strip leading numbering prefix like "01_"
+        heading = section_key.split("_", 1)[-1].replace("_", " ").title() if "_" in section_key else section_key
+
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(0, 9, heading, ln=True, fill=True)
+        pdf.ln(2)
+
+        pdf.set_font("Helvetica", "", 10)
+
+        if isinstance(content, str):
+            pdf.multi_cell(0, 6, content)
+        elif isinstance(content, dict):
+            c_type = content.get("type")
+            if c_type == "heading":
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.multi_cell(0, 7, str(content.get("text", "")))
+            elif c_type == "analysis":
+                pdf.set_font("Helvetica", "I", 10)
+                pdf.multi_cell(0, 6, f"Analysis: {content.get('analysis_type', '')}")
+                pdf.set_font("Helvetica", "", 9)
+                results = content.get("results") or {}
+                for k, v in results.items():
+                    if not isinstance(v, (dict, list)):
+                        val_str = f"{v:.4f}" if isinstance(v, float) else str(v)
+                        pdf.multi_cell(0, 5, f"  {k}: {val_str}")
+            else:
+                pdf.multi_cell(0, 6, json.dumps(content, indent=2)[:500])
+        pdf.ln(4)
+
     output_path = output_dir / f"report_{report.id}.pdf"
-    HTML(string=html_content).write_pdf(str(output_path))
+    pdf.output(str(output_path))
     return output_path
 
 
@@ -30,45 +70,26 @@ def _export_docx(report, output_dir: Path) -> Path:
     doc.add_heading(report.title, level=1)
 
     sections = report.sections if isinstance(report.sections, dict) else {}
-    for section_title, content in sections.items():
-        doc.add_heading(section_title, level=2)
+    for section_key, content in sections.items():
+        heading = section_key.split("_", 1)[-1].replace("_", " ").title() if "_" in section_key else section_key
+        doc.add_heading(heading, level=2)
+
         if isinstance(content, str):
             doc.add_paragraph(content)
         elif isinstance(content, dict):
-            doc.add_paragraph(json.dumps(content, indent=2))
+            c_type = content.get("type")
+            if c_type == "heading":
+                doc.add_heading(str(content.get("text", "")), level=3)
+            elif c_type == "analysis":
+                doc.add_paragraph(f"Analysis: {content.get('analysis_type', '')}", style="Intense Quote")
+                results = content.get("results") or {}
+                for k, v in results.items():
+                    if not isinstance(v, (dict, list)):
+                        val_str = f"{v:.4f}" if isinstance(v, float) else str(v)
+                        doc.add_paragraph(f"{k}: {val_str}", style="List Bullet")
+            else:
+                doc.add_paragraph(json.dumps(content, indent=2))
 
     output_path = output_dir / f"report_{report.id}.docx"
     doc.save(str(output_path))
     return output_path
-
-
-def _build_html(report) -> str:
-    sections_html = ""
-    sections = report.sections if isinstance(report.sections, dict) else {}
-    for title, content in sections.items():
-        if isinstance(content, str):
-            body = f"<p>{content}</p>"
-        else:
-            body = f"<pre>{json.dumps(content, indent=2)}</pre>"
-        sections_html += f"<h2>{title}</h2>{body}"
-
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body {{ font-family: 'Times New Roman', serif; margin: 2cm; line-height: 1.6; }}
-            h1 {{ text-align: center; margin-bottom: 1cm; }}
-            h2 {{ margin-top: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 0.3cm; }}
-            table {{ border-collapse: collapse; width: 100%; margin: 0.5cm 0; }}
-            th, td {{ border: 1px solid #999; padding: 0.3cm; text-align: left; }}
-            pre {{ background: #f5f5f5; padding: 0.5cm; overflow-x: auto; font-size: 0.9em; }}
-        </style>
-    </head>
-    <body>
-        <h1>{report.title}</h1>
-        {sections_html}
-    </body>
-    </html>
-    """
