@@ -9,6 +9,7 @@ import { ANALYSIS_CATEGORIES } from '@rdp/shared-types';
 import { Upload, FileSpreadsheet, Play, ChevronDown, Table, Trash2, FileText, Search, Globe, Database, Tag, Link2 } from 'lucide-react';
 import DataPreviewModal from '@/components/DataPreviewModal';
 import AnalysisConfigPanel from '@/components/AnalysisConfigPanel';
+import AIInsightsPanel from '@/components/AIInsightsPanel';
 import { useProjectWebSocket } from '@/hooks/useProjectWebSocket';
 
 export default function ProjectDetailPage() {
@@ -353,6 +354,13 @@ export default function ProjectDetailPage() {
               </p>
             </div>
           )}
+
+          {/* AI Insights */}
+          <AIInsightsPanel
+            projectId={projectId}
+            datasetId={selectedDatasetId}
+            datasetName={datasetList?.find((d) => d.id === selectedDatasetId)?.filename}
+          />
 
           {/* Analysis history */}
           <div className="bg-white rounded-lg shadow-sm border">

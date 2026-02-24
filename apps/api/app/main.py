@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.security import require_subscription
 from app.core.security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from app.routers import auth, projects, datasets, analysis, reports, ws, billing, dashboard
+from app.routers import auth, projects, datasets, analysis, reports, ws, billing, dashboard, ai
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,7 @@ app.include_router(projects.router, prefix=settings.API_V1_PREFIX, dependencies=
 app.include_router(datasets.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 app.include_router(analysis.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 app.include_router(reports.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
+app.include_router(ai.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 
 
 @app.get("/api/health")

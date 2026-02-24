@@ -215,6 +215,22 @@ export interface ReportCreate {
   export_format?: 'pdf' | 'docx';
 }
 
+// AI types
+export interface AIAskRequest {
+  question: string;
+  dataset_id: number;
+  project_id: number;
+}
+
+export interface AIAskResponse {
+  question: string;
+  reasoning: string;
+  analysis_type: string | null;
+  analysis_id: number | null;
+  interpretation: string;
+  status: 'answered' | 'cannot_answer' | 'failed';
+}
+
 // Analysis category groupings for UI
 export const ANALYSIS_CATEGORIES = {
   descriptive: {

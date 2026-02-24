@@ -6,6 +6,7 @@ import type {
   VisualizationCreate, Visualization,
   ReportCreate, Report,
   DashboardStats,
+  AIAskRequest, AIAskResponse,
 } from '@rdp/shared-types';
 
 const API_BASE = import.meta.env?.VITE_API_URL || '/api/v1';
@@ -170,6 +171,12 @@ export const billing = {
   status: () => request<{ subscription_status: string; stripe_enabled: boolean }>('/billing/status'),
   checkout: () => request<{ url: string }>('/billing/checkout', { method: 'POST' }),
   portal: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
+};
+
+// AI
+export const ai = {
+  ask: (data: AIAskRequest) =>
+    request<AIAskResponse>('/ai/ask', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // Reports

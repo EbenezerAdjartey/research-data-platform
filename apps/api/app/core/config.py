@@ -47,6 +47,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
+    # AI
+    ANTHROPIC_API_KEY: str = ""
+
     # Stripe
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
