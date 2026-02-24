@@ -1,7 +1,7 @@
 import type {
   LoginRequest, RegisterRequest, TokenResponse, User,
   Project, ProjectCreate, ProjectUpdate,
-  Dataset, DatasetPreview,
+  Dataset, DatasetPreview, SampleDatasetInfo,
   AnalysisRequest, AnalysisResult,
   VisualizationCreate, Visualization,
   ReportCreate, Report,
@@ -130,6 +130,17 @@ export const datasets = {
     request<DatasetPreview>(`/datasets/${projectId}/${datasetId}/preview?rows=${rows}`),
   delete: (projectId: number, datasetId: number) =>
     request<void>(`/datasets/${projectId}/${datasetId}`, { method: 'DELETE' }),
+  listSamples: () => request<SampleDatasetInfo[]>('/datasets/samples'),
+  importSample: (projectId: number, sampleId: string) =>
+    request<Dataset>(`/datasets/${projectId}/import-sample`, {
+      method: 'POST',
+      body: JSON.stringify({ sample_id: sampleId }),
+    }),
+  importFromUrl: (projectId: number, url: string) =>
+    request<Dataset>(`/datasets/${projectId}/import-url`, {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    }),
 };
 
 // Analysis

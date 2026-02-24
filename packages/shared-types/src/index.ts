@@ -68,6 +68,15 @@ export interface DatasetPreview {
   total_rows: number;
 }
 
+export interface SampleDatasetInfo {
+  id: string;
+  name: string;
+  description: string;
+  rows: number;
+  cols: number;
+  tags: string[];
+}
+
 // Analysis types
 export type AnalysisType =
   | 'descriptive_statistics'

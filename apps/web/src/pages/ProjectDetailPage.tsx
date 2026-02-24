@@ -6,7 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import type { AnalysisType } from '@rdp/shared-types';
 import { ANALYSIS_CATEGORIES } from '@rdp/shared-types';
-import { Upload, FileSpreadsheet, Play, ChevronDown, Table, Trash2, FileText, Search } from 'lucide-react';
+import { Upload, FileSpreadsheet, Play, ChevronDown, Table, Trash2, FileText, Search, Globe, Database, Tag, Link2 } from 'lucide-react';
 import DataPreviewModal from '@/components/DataPreviewModal';
 import AnalysisConfigPanel from '@/components/AnalysisConfigPanel';
 import { useProjectWebSocket } from '@/hooks/useProjectWebSocket';
@@ -22,6 +22,9 @@ export default function ProjectDetailPage() {
     (location.state as { selectDatasetId?: number } | null)?.selectDatasetId ?? null,
   );
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  // Open data sources state
+  const [importTab, setImportTab] = useState<'upload' | 'url' | 'samples'>('upload');
+  const [urlInput, setUrlInput] = useState('');
 
   // WebSocket for real-time analysis updates
   useProjectWebSocket(projectId);
@@ -65,6 +68,34 @@ export default function ProjectDetailPage() {
     },
   });
 
+  const { data: sampleList } = useQuery({
+    queryKey: ['dataset-samples'],
+    queryFn: () => datasets.listSamples(),
+    enabled: importTab === 'samples',
+  });
+
+  const importSampleMutation = useMutation({
+    mutationFn: (sampleId: string) => datasets.importSample(projectId, sampleId),
+    onSuccess: (ds) => {
+      queryClient.invalidateQueries({ queryKey: ['datasets', projectId] });
+      toast.success(`"${ds.filename}" imported`);
+    },
+    onError: () => toast.error('Failed to import sample'),
+  });
+
+  const importUrlMutation = useMutation({
+    mutationFn: (url: string) => datasets.importFromUrl(projectId, url),
+    onSuccess: (ds) => {
+      queryClient.invalidateQueries({ queryKey: ['datasets', projectId] });
+      setUrlInput('');
+      toast.success(`"${ds.filename}" imported`);
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to import from URL';
+      toast.error(msg);
+    },
+  });
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (files) => files.forEach((f) => uploadMutation.mutate(f)),
     accept: {
@@ -103,21 +134,106 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Datasets + Upload */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Upload */}
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              isDragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'
-            }`}
-          >
-            <input {...getInputProps()} />
-            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">
-              {uploadMutation.isPending
-                ? 'Uploading...'
-                : 'Drop files here or click to upload'}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">CSV, Excel, SPSS, SAS, Stata</p>
+          {/* Data Import Panel */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            {/* Tabs */}
+            <div className="flex border-b">
+              {([
+                { key: 'upload', label: 'Upload', Icon: Upload },
+                { key: 'url', label: 'From URL', Icon: Link2 },
+                { key: 'samples', label: 'Open Data', Icon: Globe },
+              ] as const).map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setImportTab(key)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                    importTab === key
+                      ? 'border-primary-600 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Upload tab */}
+            {importTab === 'upload' && (
+              <div
+                {...getRootProps()}
+                className={`p-5 text-center cursor-pointer transition-colors ${
+                  isDragActive ? 'bg-primary-50' : 'hover:bg-gray-50'
+                }`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="w-7 h-7 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">
+                  {uploadMutation.isPending ? 'Uploading…' : 'Drop files or click to upload'}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">CSV, Excel, SPSS, SAS, Stata</p>
+              </div>
+            )}
+
+            {/* From URL tab */}
+            {importTab === 'url' && (
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-gray-500">
+                  Import data directly from a public CSV or JSON URL.
+                </p>
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://example.com/data.csv"
+                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={() => urlInput.trim() && importUrlMutation.mutate(urlInput.trim())}
+                  disabled={!urlInput.trim() || importUrlMutation.isPending}
+                  className="w-full py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
+                >
+                  {importUrlMutation.isPending ? 'Importing…' : 'Import'}
+                </button>
+              </div>
+            )}
+
+            {/* Open Data / Samples tab */}
+            {importTab === 'samples' && (
+              <div className="p-3 space-y-2 max-h-72 overflow-y-auto">
+                {!sampleList ? (
+                  <p className="text-xs text-gray-400 text-center py-4">Loading…</p>
+                ) : (
+                  sampleList.map((s) => (
+                    <div key={s.id} className="border rounded-lg p-3 hover:border-primary-300 hover:bg-primary-50 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Database className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                            <p className="text-sm font-medium truncate">{s.name}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 leading-snug mb-1.5">{s.description}</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-xs text-gray-400">{s.rows} rows &middot; {s.cols} cols</span>
+                            {s.tags.map((t) => (
+                              <span key={t} className="inline-flex items-center gap-0.5 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                <Tag className="w-2.5 h-2.5" />{t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => importSampleMutation.mutate(s.id)}
+                          disabled={importSampleMutation.isPending}
+                          className="shrink-0 px-2.5 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          Import
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* Dataset list */}

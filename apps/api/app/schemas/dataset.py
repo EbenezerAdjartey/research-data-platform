@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 
 class DatasetResponse(BaseModel):
@@ -20,3 +20,20 @@ class DatasetPreview(BaseModel):
     dtypes: dict[str, str]
     rows: list[dict]
     total_rows: int
+
+
+class UrlImportRequest(BaseModel):
+    url: str
+
+
+class SampleImportRequest(BaseModel):
+    sample_id: str
+
+
+class SampleDatasetInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+    rows: int
+    cols: int
+    tags: list[str]
