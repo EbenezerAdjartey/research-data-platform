@@ -5,6 +5,7 @@ import type {
   AnalysisRequest, AnalysisResult,
   VisualizationCreate, Visualization,
   ReportCreate, Report,
+  DashboardStats,
 } from '@rdp/shared-types';
 
 const API_BASE = import.meta.env?.VITE_API_URL || '/api/v1';
@@ -92,6 +93,11 @@ export class ApiError extends Error {
     super(`API Error ${status}: ${body}`);
   }
 }
+
+// Dashboard
+export const dashboard = {
+  stats: () => request<DashboardStats>('/dashboard/stats'),
+};
 
 // Auth
 export const auth = {

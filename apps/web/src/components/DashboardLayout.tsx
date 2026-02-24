@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/useAuth';
-import { BarChart3, FolderOpen, LogOut, User, CreditCard, Menu, X } from 'lucide-react';
+import { BarChart3, FolderOpen, LogOut, User, CreditCard, Menu, X, LayoutDashboard } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const navItems = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderOpen },
   { path: '/billing', label: 'Billing', icon: CreditCard },
 ];

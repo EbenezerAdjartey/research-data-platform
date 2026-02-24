@@ -68,6 +68,22 @@ export interface DatasetPreview {
   total_rows: number;
 }
 
+export interface RecentAnalysis {
+  id: number;
+  analysis_type: string;
+  status: string;
+  created_at: string;
+  project_id: number;
+  project_name: string;
+}
+
+export interface DashboardStats {
+  total_projects: number;
+  total_datasets: number;
+  total_analyses: number;
+  recent_analyses: RecentAnalysis[];
+}
+
 export interface SampleDatasetInfo {
   id: string;
   name: string;

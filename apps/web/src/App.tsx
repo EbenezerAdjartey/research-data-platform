@@ -3,6 +3,7 @@ import { useAuth } from '@/context/useAuth';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardLayout from '@/components/DashboardLayout';
+import DashboardPage from '@/pages/DashboardPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import ProjectDetailPage from '@/pages/ProjectDetailPage';
 import AnalysisPage from '@/pages/AnalysisPage';
@@ -38,7 +39,8 @@ export default function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/projects" replace />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<SubscriptionRoute><DashboardPage /></SubscriptionRoute>} />
                 <Route path="/billing" element={<BillingPage />} />
                 <Route path="/projects" element={<SubscriptionRoute><ProjectsPage /></SubscriptionRoute>} />
                 <Route path="/projects/:id" element={<SubscriptionRoute><ProjectDetailPage /></SubscriptionRoute>} />

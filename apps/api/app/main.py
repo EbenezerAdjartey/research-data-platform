@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.security import require_subscription
 from app.core.security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from app.routers import auth, projects, datasets, analysis, reports, ws, billing
+from app.routers import auth, projects, datasets, analysis, reports, ws, billing, dashboard
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
 
 # Subscription-gated routes
 _sub = [Depends(require_subscription)]
+app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 app.include_router(projects.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 app.include_router(datasets.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
 app.include_router(analysis.router, prefix=settings.API_V1_PREFIX, dependencies=_sub)
