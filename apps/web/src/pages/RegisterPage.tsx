@@ -27,8 +27,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="max-w-md w-full space-y-6 p-6 sm:p-8 bg-white rounded-xl shadow-lg">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <BarChart3 className="w-12 h-12 text-primary-600" />

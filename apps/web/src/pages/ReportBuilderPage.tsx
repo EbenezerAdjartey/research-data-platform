@@ -236,7 +236,7 @@ export default function ReportBuilderPage() {
         <p className="text-gray-500 text-sm">{project?.name}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left sidebar - controls */}
         <div className="space-y-4">
           {/* Report title */}
@@ -330,7 +330,7 @@ export default function ReportBuilderPage() {
         </div>
 
         {/* Main content - section editor */}
-        <div className="lg:col-span-2">
+        <div className="md:col-span-2">
           {sections.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />

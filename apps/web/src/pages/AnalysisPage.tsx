@@ -36,7 +36,7 @@ export default function AnalysisPage() {
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border mb-6">
         <div className="p-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold">{fmt(result.analysis_type)}</h1>
               <p className="text-sm text-gray-500 mt-1">Run at {new Date(result.created_at).toLocaleString()}</p>
@@ -49,7 +49,7 @@ export default function AnalysisPage() {
                 </Link>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
               <span className={`text-xs px-3 py-1 rounded-full font-medium ${
                 result.status === 'completed' ? 'bg-green-100 text-green-700'
                   : result.status === 'failed' ? 'bg-red-100 text-red-700'

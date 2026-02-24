@@ -113,9 +113,9 @@ export default function DataExplorerPage() {
         <Link to={`/projects/${projectId}`} className="text-primary-600 hover:text-primary-800 text-sm">
           &larr; Back to Project
         </Link>
-        <div className="flex items-start justify-between mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mt-2">
           <div>
-            <h1 className="text-2xl font-bold">Data Explorer</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Data Explorer</h1>
             <p className="text-gray-500 text-sm">
               {project?.name} &middot; {datasetInfo?.filename ?? `Dataset #${dsId}`}
             </p>
@@ -123,7 +123,7 @@ export default function DataExplorerPage() {
           <Link
             to={`/projects/${projectId}`}
             state={{ selectDatasetId: dsId }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm shrink-0"
           >
             <Play className="w-4 h-4" /> Run Analysis
           </Link>
@@ -206,8 +206,8 @@ export default function DataExplorerPage() {
       </div>
 
       {/* Search and filter bar */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -293,26 +293,25 @@ export default function DataExplorerPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-              <p className="text-xs text-gray-500">
-                Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, filteredRows.length)} of{' '}
-                {filteredRows.length} rows
+            <div className="flex flex-col xs:flex-row items-center justify-between gap-2 px-4 py-3 border-t bg-gray-50">
+              <p className="text-xs text-gray-500 text-center xs:text-left">
+                {page * pageSize + 1}–{Math.min((page + 1) * pageSize, filteredRows.length)} of {filteredRows.length} rows
               </p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage(Math.max(0, page - 1))}
                   disabled={page === 0}
-                  className="p-1 border rounded hover:bg-white disabled:opacity-30"
+                  className="p-1.5 border rounded hover:bg-white disabled:opacity-30"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-xs text-gray-600">
-                  Page {page + 1} of {totalPages}
+                <span className="text-xs text-gray-600 whitespace-nowrap">
+                  {page + 1} / {totalPages}
                 </span>
                 <button
                   onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                   disabled={page >= totalPages - 1}
-                  className="p-1 border rounded hover:bg-white disabled:opacity-30"
+                  className="p-1.5 border rounded hover:bg-white disabled:opacity-30"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
