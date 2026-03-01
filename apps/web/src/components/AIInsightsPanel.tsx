@@ -1,14 +1,33 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ai } from '@rdp/api-client';
 import type { AIAskResponse } from '@rdp/shared-types';
-import { Sparkles, ArrowRight, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, AlertCircle, RotateCcw, KeyRound, Clock } from 'lucide-react';
 
 interface Props {
   projectId: number;
   datasetId: number | null;
   datasetName?: string;
+}
+
+interface ParsedError {
+  status: number;
+  detail: string;
+}
+
+function parseError(error: unknown): ParsedError {
+  const apiErr = error as { status?: number; body?: string } | null;
+  const status = apiErr?.status ?? 0;
+  const raw = apiErr?.body ?? (error as Error)?.message ?? '';
+  let detail = raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed?.detail) detail = String(parsed.detail);
+  } catch {
+    // not JSON
+  }
+  return { status, detail: detail || 'Something went wrong. Please try again.' };
 }
 
 const EXAMPLE_QUESTIONS = [
@@ -20,6 +39,13 @@ const EXAMPLE_QUESTIONS = [
 export default function AIInsightsPanel({ projectId, datasetId, datasetName }: Props) {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<AIAskResponse | null>(null);
+
+  const { data: statusData, isLoading: statusLoading } = useQuery({
+    queryKey: ['ai-status'],
+    queryFn: ai.status,
+    retry: false,
+    staleTime: 60_000,
+  });
 
   const askMutation = useMutation({
     mutationFn: (q: string) =>
@@ -43,21 +69,46 @@ export default function AIInsightsPanel({ projectId, datasetId, datasetName }: P
     failed: 'bg-red-100 text-red-700',
   };
 
+  const err = askMutation.isError ? parseError(askMutation.error) : null;
+  const aiConfigured = statusData?.configured ?? true; // assume configured until proven otherwise
+
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       {/* Header */}
       <div className="p-4 border-b flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-purple-600" />
         <h3 className="font-semibold text-sm">Ask AI</h3>
-        <span className="text-xs text-gray-400 ml-auto">Powered by Claude</span>
+        {!statusLoading && (
+          <span className={`text-xs ml-auto px-2 py-0.5 rounded-full ${
+            aiConfigured
+              ? 'text-green-700 bg-green-50'
+              : 'text-amber-700 bg-amber-50'
+          }`}>
+            {aiConfigured ? 'Claude ready' : 'Not configured'}
+          </span>
+        )}
       </div>
 
       <div className="p-4 space-y-3">
+        {/* Not configured banner — shown upfront, no click required */}
+        {!statusLoading && !aiConfigured && (
+          <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+            <KeyRound className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">API key required</p>
+              <p className="text-xs mt-0.5">
+                Add <code className="bg-amber-100 px-1 rounded">ANTHROPIC_API_KEY</code> to{' '}
+                <code className="bg-amber-100 px-1 rounded">apps/api/.env</code>, then restart the server.
+              </p>
+            </div>
+          </div>
+        )}
+
         {!datasetId ? (
           <p className="text-sm text-gray-400 text-center py-3">
             Select a dataset to ask AI questions about it.
           </p>
-        ) : (
+        ) : aiConfigured ? (
           <>
             <p className="text-xs text-gray-500">
               Asking about:{' '}
@@ -95,7 +146,7 @@ export default function AIInsightsPanel({ projectId, datasetId, datasetName }: P
             </button>
 
             {/* Example questions */}
-            {!response && !askMutation.isPending && (
+            {!response && !askMutation.isPending && !err && (
               <div className="space-y-1">
                 <p className="text-xs text-gray-400">Try asking:</p>
                 {EXAMPLE_QUESTIONS.map((q) => (
@@ -110,18 +161,16 @@ export default function AIInsightsPanel({ projectId, datasetId, datasetName }: P
               </div>
             )}
           </>
-        )}
+        ) : null}
 
         {/* Response */}
         {response && (
           <div className="space-y-3 pt-1 border-t">
             <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 space-y-2">
-              {/* Question echoed */}
               <p className="text-xs text-gray-500 font-medium truncate">
                 Q: {response.question}
               </p>
 
-              {/* Status badge + analysis type */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -134,19 +183,16 @@ export default function AIInsightsPanel({ projectId, datasetId, datasetName }: P
                 </span>
               </div>
 
-              {/* Reasoning */}
               {response.reasoning && (
                 <p className="text-xs text-gray-500 italic leading-relaxed">
                   {response.reasoning}
                 </p>
               )}
 
-              {/* Interpretation */}
               <p className="text-sm text-gray-800 leading-relaxed">
                 {response.interpretation}
               </p>
 
-              {/* Link to full analysis */}
               <div className="flex items-center justify-between pt-1">
                 {response.analysis_id ? (
                   <Link
@@ -169,12 +215,33 @@ export default function AIInsightsPanel({ projectId, datasetId, datasetName }: P
           </div>
         )}
 
-        {/* Error */}
-        {askMutation.isError && (
-          <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 rounded-md p-3">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>Failed to get AI response. Please try again.</span>
-          </div>
+        {/* Error — status-aware */}
+        {err && (
+          err.status === 503 ? (
+            <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+              <KeyRound className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">API key required</p>
+                <p className="text-xs mt-0.5">
+                  Add <code className="bg-amber-100 px-1 rounded">ANTHROPIC_API_KEY</code> to{' '}
+                  <code className="bg-amber-100 px-1 rounded">apps/api/.env</code> and restart the server.
+                </p>
+              </div>
+            </div>
+          ) : err.status === 429 ? (
+            <div className="flex items-start gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-md p-3">
+              <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Rate limit reached</p>
+                <p className="text-xs mt-0.5">{err.detail}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 rounded-md p-3">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{err.detail}</span>
+            </div>
+          )
         )}
       </div>
     </div>

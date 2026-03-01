@@ -1,7 +1,8 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -19,6 +20,21 @@ from app.services.analysis.engine import run_analysis
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+_ai_log: dict[int, list[datetime]] = defaultdict(list)
+_LIMIT, _WINDOW_H = 20, 24
+
+
+def _check_rate_limit(user_id: int) -> None:
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=_WINDOW_H)
+    _ai_log[user_id] = [t for t in _ai_log[user_id] if t > cutoff]
+    if len(_ai_log[user_id]) >= _LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: {_LIMIT} AI requests per {_WINDOW_H} hours.",
+        )
+    _ai_log[user_id].append(now)
 
 
 # ── Schemas ────────────────────────────────────────────────────────────────
@@ -99,14 +115,36 @@ async def _claude(prompt: str) -> str:
 
 
 def _parse_json(raw: str) -> dict:
-    """Extract JSON from Claude's response, stripping optional markdown fences."""
+    """Extract JSON from Claude's response, tolerating markdown fences and preamble text."""
     text = raw.strip()
-    if text.startswith("```"):
-        parts = text.split("```")
-        text = parts[1] if len(parts) > 1 else text
-        if text.startswith("json"):
-            text = text[4:]
-    return json.loads(text.strip())
+
+    # Try direct parse first (ideal case — Claude followed instructions)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Strip any markdown fences and retry
+    if "```" in text:
+        for block in text.split("```"):
+            block = block.strip()
+            if block.startswith("json"):
+                block = block[4:].strip()
+            try:
+                return json.loads(block)
+            except json.JSONDecodeError:
+                continue
+
+    # Last resort: find the first {...} substring
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError(f"No valid JSON found in Claude response: {text[:300]}")
 
 
 # ── Endpoint ───────────────────────────────────────────────────────────────
@@ -119,6 +157,8 @@ async def ai_ask(
 ):
     if not settings.ANTHROPIC_API_KEY:
         raise HTTPException(status_code=503, detail="AI features not configured (ANTHROPIC_API_KEY missing)")
+
+    _check_rate_limit(user.id)
 
     # ── Load dataset ──────────────────────────────────────────────────────
     result = await db.execute(

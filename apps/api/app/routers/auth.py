@@ -130,4 +130,6 @@ async def update_profile(
         user.full_name = data.full_name
     if data.institution is not None:
         user.institution = data.institution
+    await db.commit()
+    await db.refresh(user)
     return user

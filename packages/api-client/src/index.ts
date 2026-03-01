@@ -175,6 +175,7 @@ export const billing = {
 
 // AI
 export const ai = {
+  status: () => request<{ configured: boolean }>('/ai/status'),
   ask: (data: AIAskRequest) =>
     request<AIAskResponse>('/ai/ask', { method: 'POST', body: JSON.stringify(data) }),
 };

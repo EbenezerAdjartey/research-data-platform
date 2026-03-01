@@ -107,16 +107,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : recentProjects.length === 0 ? (
-            <div className="bg-white border rounded-xl p-10 text-center">
-              <FolderOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm mb-4">No projects yet.</p>
-              <Link
-                to="/projects"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700"
-              >
-                <Plus className="w-4 h-4" /> Create your first project
-              </Link>
-            </div>
+            <GettingStartedChecklist />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {recentProjects.map((p) => (
@@ -259,6 +250,40 @@ function StatCard({
   );
 
   return href ? <Link to={href}>{inner}</Link> : <div>{inner}</div>;
+}
+
+function GettingStartedChecklist() {
+  const steps = [
+    { n: 1, label: 'Create a project', desc: 'Organise your research in a workspace', href: '/projects', cta: 'Create project' },
+    { n: 2, label: 'Import a dataset', desc: 'Upload a CSV file or import from a URL', href: '/projects', cta: 'Go to projects' },
+    { n: 3, label: 'Run an analysis', desc: 'Choose from 20+ statistical methods', href: '/projects', cta: 'Start analysing' },
+    { n: 4, label: 'Ask AI', desc: 'Get plain-language answers from Claude', href: '/projects', cta: 'Try AI insights' },
+  ];
+  return (
+    <div className="bg-white border rounded-xl p-6">
+      <h3 className="font-semibold text-gray-800 mb-1">Getting Started</h3>
+      <p className="text-sm text-gray-500 mb-5">Follow these steps to get the most out of RDP.</p>
+      <ol className="space-y-4">
+        {steps.map((s) => (
+          <li key={s.n} className="flex items-start gap-4">
+            <div className="w-7 h-7 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 font-bold text-sm">
+              {s.n}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800">{s.label}</p>
+              <p className="text-xs text-gray-500">{s.desc}</p>
+            </div>
+            <Link
+              to={s.href}
+              className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-medium shrink-0"
+            >
+              {s.cta} <ArrowRight className="w-3 h-3" />
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
 }
 
 function QuickAction({

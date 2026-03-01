@@ -10,6 +10,7 @@ import AnalysisPage from '@/pages/AnalysisPage';
 import ReportBuilderPage from '@/pages/ReportBuilderPage';
 import DataExplorerPage from '@/pages/DataExplorerPage';
 import BillingPage from '@/pages/BillingPage';
+import ProfilePage from '@/pages/ProfilePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<SubscriptionRoute><DashboardPage /></SubscriptionRoute>} />
                 <Route path="/billing" element={<BillingPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/projects" element={<SubscriptionRoute><ProjectsPage /></SubscriptionRoute>} />
                 <Route path="/projects/:id" element={<SubscriptionRoute><ProjectDetailPage /></SubscriptionRoute>} />
                 <Route path="/projects/:id/analysis/:analysisId" element={<SubscriptionRoute><AnalysisPage /></SubscriptionRoute>} />

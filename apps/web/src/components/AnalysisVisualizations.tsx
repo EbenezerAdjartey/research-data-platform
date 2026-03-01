@@ -8,7 +8,13 @@ interface Props {
 
 export default function AnalysisVisualizations({ analysisType, results }: Props) {
   const charts = generateCharts(analysisType, results);
-  if (charts.length === 0) return null;
+  if (charts.length === 0) {
+    return (
+      <p className="text-sm text-gray-400 italic">
+        No chart template available for this analysis type.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -526,6 +532,37 @@ function generateCharts(type: AnalysisType, results: Record<string, unknown>): C
             marker: { color: '#6366f1' },
           }],
           layout: { title: 'Feature Importance', xaxis: { title: 'Importance' }, yaxis: { automargin: true } },
+        });
+      }
+      break;
+    }
+
+    case 'mann_whitney':
+    case 'wilcoxon':
+    case 'kruskal_wallis': {
+      const pValue = results.p_value as number | undefined;
+      const testName = (results.test as string | undefined) || type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      if (pValue !== undefined) {
+        charts.push({
+          data: [{
+            type: 'bar' as const,
+            x: [testName],
+            y: [pValue],
+            marker: { color: pValue < 0.05 ? '#10b981' : '#94a3b8' },
+            name: 'p-value',
+          }, {
+            type: 'scatter' as const,
+            mode: 'lines' as const,
+            x: [testName],
+            y: [0.05],
+            line: { dash: 'dash', color: '#ef4444' },
+            name: 'α = 0.05',
+          }],
+          layout: {
+            title: `${testName} — p-value`,
+            yaxis: { title: 'p-value', range: [0, Math.max(pValue * 1.4, 0.15)] },
+            showlegend: true,
+          },
         });
       }
       break;

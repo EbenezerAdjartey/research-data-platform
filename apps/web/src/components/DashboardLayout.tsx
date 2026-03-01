@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderOpen },
+  { path: '/profile', label: 'Profile', icon: User },
   { path: '/billing', label: 'Billing', icon: CreditCard },
 ];
 
@@ -73,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* User footer */}
         <div className="p-4 border-t border-gray-700">
-          <div className="flex items-center gap-3 mb-3">
+          <Link to="/profile" onClick={close} className="flex items-center gap-3 mb-3 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center shrink-0">
               <User className="w-4 h-4" />
             </div>
@@ -81,7 +82,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-medium truncate">{user?.full_name}</p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={logout}
             className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors w-full py-1"
