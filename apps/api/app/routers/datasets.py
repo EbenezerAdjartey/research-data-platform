@@ -1,5 +1,6 @@
 import uuid
 import asyncio
+import tempfile
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.schemas.dataset import (
     DatasetResponse, DatasetPreview,
     UrlImportRequest, SampleImportRequest, SampleDatasetInfo,
 )
+from app.services import storage
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -142,11 +144,18 @@ async def import_sample_dataset(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load sample: {e}")
 
-    upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
     file_id = uuid.uuid4().hex
-    parquet_path = upload_dir / f"{file_id}.parquet"
-    df.to_parquet(parquet_path, index=False)
+
+    if storage.r2_configured():
+        buf = df.to_parquet(index=False)
+        key = f"datasets/{user.id}/{project_id}/{file_id}.parquet"
+        storage_path = storage.upload_bytes(buf, key, "application/octet-stream")
+    else:
+        upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        parquet_path = upload_dir / f"{file_id}.parquet"
+        df.to_parquet(parquet_path, index=False)
+        storage_path = str(parquet_path)
 
     column_metadata = {
         col: {"dtype": str(df[col].dtype), "null_count": int(df[col].isnull().sum())}
@@ -156,7 +165,7 @@ async def import_sample_dataset(
     dataset = Dataset(
         project_id=project_id,
         filename=f"{meta['name'].lower().replace(' ', '_')}.csv",
-        storage_path=str(parquet_path),
+        storage_path=storage_path,
         format="csv",
         row_count=len(df),
         col_count=len(df.columns),
@@ -211,11 +220,18 @@ async def import_from_url(
     if len(df) > max_rows:
         df = df.head(max_rows)
 
-    upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
     file_id = uuid.uuid4().hex
-    parquet_path = upload_dir / f"{file_id}.parquet"
-    df.to_parquet(parquet_path, index=False)
+
+    if storage.r2_configured():
+        buf = df.to_parquet(index=False)
+        key = f"datasets/{user.id}/{project_id}/{file_id}.parquet"
+        storage_path = storage.upload_bytes(buf, key, "application/octet-stream")
+    else:
+        upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        parquet_path = upload_dir / f"{file_id}.parquet"
+        df.to_parquet(parquet_path, index=False)
+        storage_path = str(parquet_path)
 
     # Derive a filename from the URL
     raw_name = url.split("?")[0].rstrip("/").split("/")[-1] or "imported_data"
@@ -229,7 +245,7 @@ async def import_from_url(
     dataset = Dataset(
         project_id=project_id,
         filename=raw_name,
-        storage_path=str(parquet_path),
+        storage_path=storage_path,
         format=fmt,
         row_count=len(df),
         col_count=len(df.columns),
@@ -257,25 +273,36 @@ async def upload_dataset(
     if ext not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported file format: {ext}")
 
-    upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_id = uuid.uuid4().hex
-    original_path = upload_dir / f"{file_id}{ext}"
-    parquet_path = upload_dir / f"{file_id}.parquet"
-
     content = await file.read()
     max_size = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     if len(content) > max_size:
         raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {settings.MAX_UPLOAD_SIZE_MB}MB.")
-    original_path.write_bytes(content)
+
+    file_id = uuid.uuid4().hex
+
+    # Write original to a temp file so parsers that need a file path can read it
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_orig:
+        tmp_orig.write(content)
+        tmp_orig_path = Path(tmp_orig.name)
 
     try:
-        df = read_file_to_dataframe(original_path, ext)
-        df.to_parquet(parquet_path, index=False)
+        df = read_file_to_dataframe(tmp_orig_path, ext)
     except Exception as e:
-        original_path.unlink(missing_ok=True)
+        tmp_orig_path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {e}")
+    finally:
+        tmp_orig_path.unlink(missing_ok=True)
+
+    if storage.r2_configured():
+        parquet_bytes = df.to_parquet(index=False)
+        key = f"datasets/{user.id}/{project_id}/{file_id}.parquet"
+        storage_path = storage.upload_bytes(parquet_bytes, key, "application/octet-stream")
+    else:
+        upload_dir = settings.UPLOAD_DIR / str(user.id) / str(project_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        parquet_path = upload_dir / f"{file_id}.parquet"
+        df.to_parquet(parquet_path, index=False)
+        storage_path = str(parquet_path)
 
     column_metadata = {
         col: {"dtype": str(df[col].dtype), "null_count": int(df[col].isnull().sum())}
@@ -285,7 +312,7 @@ async def upload_dataset(
     dataset = Dataset(
         project_id=project_id,
         filename=file.filename,
-        storage_path=str(parquet_path),
+        storage_path=storage_path,
         format=ext.lstrip("."),
         row_count=len(df),
         col_count=len(df.columns),
@@ -332,7 +359,7 @@ async def preview_dataset(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    df = pd.read_parquet(dataset.storage_path)
+    df = storage.read_dataframe(dataset.storage_path)
     preview_df = df.head(rows)
 
     return DatasetPreview(
@@ -360,9 +387,5 @@ async def delete_dataset(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    parquet_path = Path(dataset.storage_path)
-    parquet_path.unlink(missing_ok=True)
-    # Also remove the original uploaded file stored alongside the parquet
-    original_path = parquet_path.with_suffix(f".{dataset.format}")
-    original_path.unlink(missing_ok=True)
+    storage.delete_file(dataset.storage_path)
     await db.delete(dataset)

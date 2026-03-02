@@ -47,6 +47,13 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
+    # Cloudflare R2 (S3-compatible object storage)
+    # Leave unset / None to fall back to local-disk storage (dev default)
+    R2_ACCOUNT_ID: str | None = None
+    R2_ACCESS_KEY_ID: str | None = None
+    R2_SECRET_ACCESS_KEY: str | None = None
+    R2_BUCKET_NAME: str | None = None
+
     # AI
     ANTHROPIC_API_KEY: str = ""
 

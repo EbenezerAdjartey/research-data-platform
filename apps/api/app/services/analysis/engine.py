@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 import pandas as pd
+from app.services import storage
 
 # Registry of analysis engines
 _registry: dict[str, type["AnalysisEngine"]] = {}
@@ -62,7 +63,7 @@ def run_analysis(analysis_type: str, parameters: dict, data_path: str) -> dict:
         available = ", ".join(sorted(_registry.keys()))
         raise ValueError(f"Unknown analysis type: {analysis_type}. Available: {available}")
 
-    df = pd.read_parquet(data_path)
+    df = storage.read_dataframe(data_path)
     engine = engine_cls(df, parameters)
     engine.validate()
     return engine.execute()

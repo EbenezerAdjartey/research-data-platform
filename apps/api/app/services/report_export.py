@@ -1,20 +1,18 @@
 from pathlib import Path
 import json
+import tempfile
 
 
-def export_report(report, export_format: str) -> Path:
-    """Export a report to PDF or DOCX."""
-    output_dir = Path("uploads/reports")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
+def export_report(report, export_format: str) -> tuple[bytes, str]:
+    """Export a report to PDF or DOCX and return (content_bytes, mime_type)."""
     if export_format == "pdf":
-        return _export_pdf(report, output_dir)
+        return _export_pdf(report)
     elif export_format == "docx":
-        return _export_docx(report, output_dir)
+        return _export_docx(report)
     raise ValueError(f"Unsupported format: {export_format}")
 
 
-def _export_pdf(report, output_dir: Path) -> Path:
+def _export_pdf(report) -> tuple[bytes, str]:
     from fpdf import FPDF
 
     pdf = FPDF()
@@ -58,12 +56,18 @@ def _export_pdf(report, output_dir: Path) -> Path:
                 pdf.multi_cell(0, 6, json.dumps(content, indent=2)[:500])
         pdf.ln(4)
 
-    output_path = output_dir / f"report_{report.id}.pdf"
-    pdf.output(str(output_path))
-    return output_path
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        pdf.output(str(tmp_path))
+        data = tmp_path.read_bytes()
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    return data, "application/pdf"
 
 
-def _export_docx(report, output_dir: Path) -> Path:
+def _export_docx(report) -> tuple[bytes, str]:
     from docx import Document
 
     doc = Document()
@@ -90,6 +94,12 @@ def _export_docx(report, output_dir: Path) -> Path:
             else:
                 doc.add_paragraph(json.dumps(content, indent=2))
 
-    output_path = output_dir / f"report_{report.id}.docx"
-    doc.save(str(output_path))
-    return output_path
+    with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        doc.save(str(tmp_path))
+        data = tmp_path.read_bytes()
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    return data, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
